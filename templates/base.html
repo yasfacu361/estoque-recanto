@@ -9,8 +9,29 @@
 <body>
   <header>
     <h1>Estoque do Recanto</h1>
-    {% if session.logado %}<a href="{{ url_for('sair') }}">Sair</a>{% endif %}
+    <nav>
+      <button type="button" class="botao-fonte" id="fonte" aria-pressed="false">A+ Letra maior</button>
+      {% if session.logado %}<a href="{{ url_for('sair') }}">Sair</a>{% endif %}
+    </nav>
   </header>
   <main>{% block conteudo %}{% endblock %}</main>
+  <script>
+    (function () {
+      var botao = document.getElementById("fonte");
+      function aplicar(ativo) {
+        document.body.classList.toggle("letra-grande", ativo);
+        botao.setAttribute("aria-pressed", ativo);
+        botao.textContent = ativo ? "A- Letra normal" : "A+ Letra maior";
+      }
+      var salvo = false;
+      try { salvo = localStorage.getItem("letraGrande") === "1"; } catch (e) {}
+      aplicar(salvo);
+      botao.addEventListener("click", function () {
+        var ativo = !document.body.classList.contains("letra-grande");
+        aplicar(ativo);
+        try { localStorage.setItem("letraGrande", ativo ? "1" : "0"); } catch (e) {}
+      });
+    })();
+  </script>
 </body>
 </html>

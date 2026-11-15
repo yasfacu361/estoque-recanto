@@ -2,13 +2,15 @@
 {% block conteudo %}
 <h2>Resultado</h2>
 {% if produto %}
-<p class="ok">{{ 'Retirada' if tipo == 'retirada' else 'Entrada' }} registrada. {{ produto.nome }}: saldo {{ produto.saldo }}.</p>
+<p class="ok" role="status">✓ {{ 'Retirada' if tipo == 'retirada' else 'Entrada' }} registrada. {{ produto.nome }}: saldo {{ produto.saldo }}.</p>
 {% endif %}
 <h3>Precisa repor</h3>
-<ul>
-  {% for p in repor %}<li>{{ p.nome }} – saldo {{ p.saldo }} <span class="repor">⚠ Repor</span></li>
-  {% else %}<li>Nenhum produto no minimo.</li>{% endfor %}
+<ul class="lista">
+  {% for p in repor %}<li class="precisa"><span><span class="nome">{{ p.nome }}</span><br><span class="saldo">Saldo {{ p.saldo }} · mínimo {{ p.estoque_minimo }}</span></span><span class="repor">⚠ Repor</span></li>
+  {% else %}<li>Nenhum produto no mínimo.</li>{% endfor %}
 </ul>
-<a class="botao" href="{{ url_for('estoque') }}">Voltar ao estoque</a>
-<a class="botao secundario" href="{{ url_for('movimentar') }}">Nova movimentação</a>
+<div class="acoes">
+  <a class="botao" href="{{ url_for('estoque') }}">Voltar ao estoque</a>
+  <a class="botao secundario" href="{{ url_for('movimentar') }}">Nova movimentação</a>
+</div>
 {% endblock %}

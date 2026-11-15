@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% block conteudo %}
 <h2>Estoque</h2>
-<a class="botao" href="{{ url_for('movimentar') }}">Registrar movimentação</a>
-<a class="botao secundario" href="{{ url_for('novo_produto') }}">Novo produto</a>
-<table>
-  <tr><th>Produto</th><th>Saldo</th><th>Situação</th></tr>
+<div class="acoes">
+  <a class="botao" href="{{ url_for('movimentar') }}">Registrar movimentação</a>
+  <a class="botao secundario" href="{{ url_for('novo_produto') }}">Novo produto</a>
+</div>
+<ul class="lista">
   {% for p in produtos %}
-  <tr>
-    <td>{{ p.nome }}</td>
-    <td>{{ p.saldo }}</td>
-    <td>{% if p.repor %}<span class="repor">⚠ Repor</span>{% else %}OK{% endif %}</td>
-  </tr>
+  <li class="{{ 'precisa' if p.repor }}">
+    <span><span class="nome">{{ p.nome }}</span><br><span class="saldo">Saldo {{ p.saldo }} · mínimo {{ p.estoque_minimo }}</span></span>
+    {% if p.repor %}<span class="repor">⚠ Repor</span>{% else %}<span class="situacao-ok">✓ OK</span>{% endif %}
+  </li>
+  {% else %}
+  <li>Nenhum produto cadastrado ainda.</li>
   {% endfor %}
-</table>
+</ul>
 {% endblock %}
