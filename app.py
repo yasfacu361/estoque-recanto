@@ -99,6 +99,7 @@ def exigir_login():
         return redirect(url_for("login"))
 
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     erro = None
@@ -106,6 +107,7 @@ def login():
         if request.form.get("usuario") == USUARIO and check_password_hash(SENHA_HASH, request.form.get("senha", "")):
             session["logado"] = True
             return redirect(url_for("estoque"))
+
         erro = "Usuario ou senha incorretos."
     return render_template("login.html", erro=erro)
 
