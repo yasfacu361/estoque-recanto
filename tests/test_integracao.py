@@ -74,3 +74,25 @@ def test_movimentacao_com_dados_invalidos(cliente):
 def test_sair_encerra_sessao(cliente):
     cliente.get("/sair")
     assert cliente.get("/").status_code == 302
+
+
+def test_itens_para_repor_aparecem_primeiro(cliente):
+    cliente.post("/produto/novo", data={"nome": "Creme dental", "estoque_minimo": "6"})
+    cliente.post("/movimentar", data={"produto_id": produto("Creme dental")["id"], "tipo": "entrada", "quantidade": "12"})
+    cliente.post("/produto/novo", data={"nome": "Sabonete", "estoque_minimo": "10"})
+    nomes = [p["nome"] for p in estoque.listar_produtos()]
+    assert nomes == ["Sabonete", "Creme dental"]
+
+
+def test_botao_da_linha_ja_escolhe_o_produto(cliente):
+    cliente.post("/produto/novo", data={"nome": "Sabonete", "estoque_minimo": "10"})
+    pid = produto("Sabonete")["id"]
+    texto = cliente.get(f"/movimentar?produto_id={pid}&tipo=retirada").get_data(as_text=True)
+    assert "Retirada de Sabonete" in texto
+    assert f'name="produto_id" value="{pid}"' in texto
+
+
+def test_linha_alterada_fica_destacada(cliente):
+    cliente.post("/produto/novo", data={"nome": "Sabonete", "estoque_minimo": "10"})
+    pid = produto("Sabonete")["id"]
+    assert "alterado" in cliente.get(f"/?alterado={pid}").get_data(as_text=True)

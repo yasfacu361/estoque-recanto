@@ -1,18 +1,22 @@
 {% extends "base.html" %}
 {% block conteudo %}
 <h2>Estoque</h2>
-<div class="acoes">
-  <a class="botao" href="{{ url_for('movimentar') }}">Registrar movimentação</a>
-  <a class="botao secundario" href="{{ url_for('novo_produto') }}">Novo produto</a>
-</div>
+<p class="ajuda">Pegou um item do armário? Toque em <strong>Retirada</strong> na linha dele. Chegou produto? Toque em <strong>Entrada</strong>.</p>
 <ul class="lista">
   {% for p in produtos %}
-  <li class="{{ 'precisa' if p.repor }}">
-    <span><span class="nome">{{ p.nome }}</span><br><span class="saldo">Saldo {{ p.saldo }} · mínimo {{ p.estoque_minimo }}</span></span>
-    {% if p.repor %}<span class="repor">⚠ Repor</span>{% else %}<span class="situacao-ok">✓ OK</span>{% endif %}
+  <li class="{{ 'precisa' if p.repor }} {{ 'alterado' if p.id == alterado }}">
+    <div class="linha">
+      <span><span class="nome">{{ p.nome }}</span><br><span class="saldo">Saldo {{ p.saldo }} · mínimo {{ p.estoque_minimo }}</span></span>
+      {% if p.repor %}<span class="repor">⚠ Repor</span>{% else %}<span class="situacao-ok">✓ OK</span>{% endif %}
+    </div>
+    <div class="botoes-linha">
+      <a class="botao" href="{{ url_for('movimentar', produto_id=p.id, tipo='retirada') }}" aria-label="Retirada de {{ p.nome }}">− Retirada</a>
+      <a class="botao secundario" href="{{ url_for('movimentar', produto_id=p.id, tipo='entrada') }}" aria-label="Entrada de {{ p.nome }}">+ Entrada</a>
+    </div>
   </li>
   {% else %}
-  <li>Nenhum produto cadastrado ainda.</li>
+  <li>Nenhum produto cadastrado ainda. Comece em “Novo produto”.</li>
   {% endfor %}
 </ul>
+<div class="acoes"><a class="botao secundario" href="{{ url_for('novo_produto') }}">+ Novo produto</a></div>
 {% endblock %}

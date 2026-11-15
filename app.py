@@ -57,7 +57,9 @@ def _montar(linha):
 def listar_produtos():
     with conectar() as con, con.cursor() as cur:
         cur.execute(SQL_PRODUTOS + " GROUP BY p.id ORDER BY p.nome")
-        return [_montar(linha) for linha in cur.fetchall()]
+        produtos = [_montar(linha) for linha in cur.fetchall()]
+    # Itens que precisam repor aparecem primeiro.
+    return sorted(produtos, key=lambda p: not p["repor"])
 
 
 def buscar_produto(produto_id):
@@ -99,7 +101,6 @@ def exigir_login():
         return redirect(url_for("login"))
 
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     erro = None
@@ -107,7 +108,6 @@ def login():
         if request.form.get("usuario") == USUARIO and check_password_hash(SENHA_HASH, request.form.get("senha", "")):
             session["logado"] = True
             return redirect(url_for("estoque"))
-
         erro = "Usuario ou senha incorretos."
     return render_template("login.html", erro=erro)
 
@@ -120,7 +120,9 @@ def sair():
 
 @app.route("/")
 def estoque():
-    return render_template("estoque.html", produtos=listar_produtos())
+    alterado = request.args.get("alterado", "")
+    return render_template("estoque.html", produtos=listar_produtos(),
+                           alterado=int(alterado) if alterado.isdigit() else None)
 
 
 @app.route("/produto/novo", methods=["GET", "POST"])
@@ -143,6 +145,8 @@ def novo_produto():
 @app.route("/movimentar", methods=["GET", "POST"])
 def movimentar():
     erro = None
+    escolhido = request.values.get("produto_id", "")
+    tipo_escolhido = request.values.get("tipo", "retirada")
     if request.method == "POST":
         pid = request.form.get("produto_id", "")
         tipo = request.form.get("tipo")
@@ -156,7 +160,10 @@ def movimentar():
                 return redirect(url_for("resultado", produto_id=produto["id"], tipo=tipo))
             except ValueError as e:
                 erro = f"Quantidade maior que o saldo ({e.args[0]})."
-    return render_template("movimentar.html", produtos=listar_produtos(), erro=erro)
+    produtos = listar_produtos()
+    fixo = next((p for p in produtos if str(p["id"]) == escolhido), None)
+    return render_template("movimentar.html", produtos=produtos, fixo=fixo,
+                           tipo=tipo_escolhido if tipo_escolhido in ("entrada", "retirada") else "retirada", erro=erro)
 
 
 @app.route("/resultado")

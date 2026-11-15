@@ -10,7 +10,6 @@
   {% else %}<li>Nenhum produto no mínimo.</li>{% endfor %}
 </ul>
 <div class="acoes">
-  <a class="botao" href="{{ url_for('estoque') }}">Voltar ao estoque</a>
-  <a class="botao secundario" href="{{ url_for('movimentar') }}">Nova movimentação</a>
+  <a class="botao" href="{{ url_for('estoque', alterado=produto.id if produto else None) }}">Voltar ao estoque</a>
 </div>
 {% endblock %}
