@@ -2,9 +2,11 @@
 
 Projeto de Software (T02). Controle simples dos produtos de higiene do Recanto da Vovó: cadastro de produto com quantidade mínima, entradas, retiradas e aviso **⚠ Repor**.
 
+
 **Regra principal:** saldo = entradas − retiradas. O aviso Repor aparece quando o saldo fica igual ou menor que o mínimo. Uma retirada não pode deixar o saldo negativo.
 
 Tecnologia: Python 3.12+, Flask, PyMySQL e MySQL 8. O saldo não fica gravado; ele é calculado a partir da tabela `movimentacao`.
+
 
 ## Como rodar
 
