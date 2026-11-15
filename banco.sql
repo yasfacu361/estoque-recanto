@@ -13,5 +13,6 @@ CREATE TABLE IF NOT EXISTS movimentacao (
     tipo ENUM('entrada', 'retirada') NOT NULL,
     quantidade INT NOT NULL CHECK (quantidade > 0),
     data DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     FOREIGN KEY (produto_id) REFERENCES produto(id)
 );
