@@ -18,3 +18,7 @@ Tecnologia: Python 3.12+, Flask, PyMySQL e MySQL 8. O saldo não fica gravado; e
 5. `python app.py` e abra http://127.0.0.1:5000
 
 O sistema começa vazio. Cadastre os produtos em **Novo produto** e registre as entradas.
+
+## Testes
+
+`pip install -r requirements-dev.txt` e depois `pytest -v --cov=app`. Os testes de integração usam o mesmo MySQL das variáveis `DB_*` e recriam as tabelas a cada teste, então rode com um banco de teste. A cada push, o GitHub Actions roda tudo com um MySQL 8 (`.github/workflows/ci.yml`).
