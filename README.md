@@ -1,20 +1,19 @@
 # Estoque do Recanto
 
-Projeto de Software (T02). Controle simples dos produtos de higiene do Recanto da Vovó: cadastro de produto com quantidade mínima, entradas, retiradas e aviso **⚠ Repor**.
+MVP para controle de itens de higiene: cadastro, entradas, retiradas e aviso de reposição.
 
+## Validação local com dados simulados
 
-**Regra principal:** saldo = entradas − retiradas. O aviso Repor aparece quando o saldo fica igual ou menor que o mínimo. Uma retirada não pode deixar o saldo negativo.
+O aplicativo está temporariamente sem banco de dados. Há três produtos fictícios, e os dados são mantidos apenas em memória: **as alterações são perdidas ao reiniciar**. A senha fixa é somente para testes locais.
 
-Tecnologia: Python 3.12+, Flask, PyMySQL e MySQL 8. O saldo não fica gravado; ele é calculado a partir da tabela `movimentacao`.
+1. Instale as dependências: `pip install -r requirements.txt`.
+2. Execute `python app.py` e acesse http://127.0.0.1:5000.
+3. Entre com usuário `equipe` e senha `123456`.
 
+O código anterior conectado ao MySQL está preservado em `app_mysql.py`, junto com `banco.sql` e `.env.example`. Será necessário restaurar e configurar essa versão para usar o banco novamente.
 
-## Como rodar
+## Testes
 
-1. Crie o banco: `mysql -u root -p < banco.sql`
-2. Instale as dependências: `pip install -r requirements.txt`
-3. Gere o hash da senha da equipe:
-   `python -c "from werkzeug.security import generate_password_hash as g; print(g('sua-senha'))"`
-4. Defina as variáveis de ambiente listadas em `.env.example` (no Windows, `set NOME=valor`; no Linux, `export NOME=valor`).
-5. `python app.py` e abra http://127.0.0.1:5000
+Instale as dependências com `pip install -r requirements-dev.txt` e execute `pytest -v --cov=app`. Os testes atuais usam dados em memória, sem conectar ao MySQL.
 
-O sistema começa vazio. Cadastre os produtos em **Novo produto** e registre as entradas.
+A tela inicial apresenta um dashboard com o resumo de reposição, gráfico ApexCharts e as últimas cinco movimentações feitas desde que o aplicativo foi iniciado. Na tela de estoque há busca por nome e filtro para produtos que precisam ser repostos. O gráfico usa CDN e precisa de internet; os números e listas continuam disponíveis se ele não carregar. Dados e histórico são simulados e se apagam ao reiniciar.

@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block conteudo %}
-<h2>Registrar movimentação</h2>
-{% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
-<form method="post">
+<h2>{{ 'Entrada' if tipo == 'entrada' else 'Retirada' }}{% if fixo %} de {{ fixo.nome }}{% endif %}</h2>
+{% if fixo %}<p class="ajuda">Saldo agora: <strong>{{ fixo.saldo }}</strong>. Escolha quantos {{ 'chegaram' if tipo == 'entrada' else 'você pegou' }} e toque em Salvar.</p>{% endif %}
+{% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+<form method="post" class="cartao">
+  {% if fixo %}
+  <input type="hidden" name="produto_id" value="{{ fixo.id }}">
+  <input type="hidden" name="tipo" value="{{ tipo }}">
+  {% else %}
   <label for="produto_id">Produto</label>
   <select id="produto_id" name="produto_id" required>
     <option value="">Escolha...</option>
@@ -10,13 +15,18 @@
   </select>
   <fieldset>
     <legend>Tipo</legend>
-    <label><input type="radio" name="tipo" value="retirada" checked> Retirada</label>
-    <label><input type="radio" name="tipo" value="entrada"> Entrada</label>
+    <label><input type="radio" name="tipo" value="retirada" {{ 'checked' if tipo != 'entrada' }}> Retirada</label>
+    <label><input type="radio" name="tipo" value="entrada" {{ 'checked' if tipo == 'entrada' }}> Entrada</label>
   </fieldset>
+  {% endif %}
   <label for="quantidade">Quantidade</label>
-  <input id="quantidade" name="quantidade" type="number" min="1" required>
-  <button class="botao">Salvar</button>
-  <a class="botao secundario" href="{{ url_for('estoque') }}">Voltar</a>
+  <div class="rapidos" role="group" aria-label="Quantidade rápida">
+    {% for n in [1, 2, 5] %}<button type="button" class="botao secundario" onclick="document.getElementById('quantidade').value={{ n }}">{{ n }}</button>{% endfor %}
+  </div>
+  <input id="quantidade" name="quantidade" type="number" min="1" inputmode="numeric" required>
+  <div class="acoes">
+    <button class="botao">Salvar</button>
+    <a class="botao secundario" href="{{ url_for('estoque') }}">Voltar</a>
+  </div>
 </form>
-
 {% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<section class="boas-vindas">
+  <div><span class="eyebrow">VISÃO GERAL</span><h2>Olá, equipe do Recanto!</h2><p>Um cuidado de cada vez. Veja como está o estoque hoje.</p></div>
+  <a class="botao botao-claro" href="{{ url_for('estoque') }}">Ver estoque <span aria-hidden="true">→</span></a>
+</section>
+<section class="indicadores" aria-label="Resumo do estoque">
+  <div class="indicador"><span>Produtos cadastrados</span><strong>{{ produtos|length }}</strong><small>Itens acompanhados</small></div>
+  <div class="indicador alerta"><span>Precisam de reposição</span><strong>{{ repor|length }}</strong><small>No mínimo ou abaixo dele</small></div>
+  <div class="indicador"><span>Estoque em dia</span><strong>{{ produtos|length - repor|length }}</strong><small>Acima do mínimo</small></div>
+</section>
+<div class="painel-grid">
+  <section class="cartao painel-grafico"><div class="cabecalho-painel"><div><span class="eyebrow">ACOMPANHAMENTO</span><h3>Situação do estoque</h3><p class="ajuda">Produtos por situação atual</p></div></div>
+    {% if produtos %}<div id="grafico-estoque" aria-label="{{ repor|length }} produtos precisam de reposição; {{ produtos|length - repor|length }} estão em dia"></div><p class="grafico-fallback" id="grafico-fallback">{{ repor|length }} precisam repor · {{ produtos|length - repor|length }} em dia</p>{% else %}<p class="vazio">Cadastre um produto para visualizar o gráfico.</p>{% endif %}
+  </section>
+  <section class="cartao"><div class="cabecalho-painel"><div><span class="eyebrow">ATENÇÃO</span><h3>Precisa repor</h3><p class="ajuda">Itens que chegaram ao mínimo</p></div><a class="link" href="{{ url_for('estoque', filtro='repor') }}">Ver todos →</a></div>
+    <ul class="lista compacta">{% for p in repor[:5] %}<li class="precisa"><div class="linha"><span><span class="nome">{{ p.nome }}</span><br><span class="saldo">Saldo {{ p.saldo }} · mínimo {{ p.estoque_minimo }}</span></span><a class="repor" href="{{ url_for('movimentar', produto_id=p.id, tipo='entrada') }}">+ Entrada</a></div></li>{% else %}<li class="vazio">Tudo em dia! Nenhum produto precisa de reposição.</li>{% endfor %}</ul>
+  </section>
+</div>
+<section class="cartao historico"><div class="cabecalho-painel"><div><span class="eyebrow">ATIVIDADE RECENTE</span><h3>Últimas movimentações</h3><p class="ajuda">Entradas e retiradas registradas nesta sessão</p></div><a class="link" href="{{ url_for('estoque') }}">Movimentar →</a></div>
+  <ul class="lista compacta">{% for m in movimentacoes %}<li><div class="linha"><span><span class="nome">{{ m.produto }}</span><br><span class="saldo">{{ m.data }}</span></span><span class="{{ 'situacao-ok' if m.tipo == 'entrada' else 'repor' }}">{{ '+' if m.tipo == 'entrada' else '−' }} {{ m.quantidade }} · {{ 'Entrada' if m.tipo == 'entrada' else 'Retirada' }}</span></div></li>{% else %}<li class="vazio">Nenhuma movimentação registrada nesta sessão.</li>{% endfor %}</ul>
+</section>
+{% endblock %}
+{% block scripts %}
+{% if produtos %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@8.8.1/dist/apexcharts.min.js"></script>
+<script>
+  if (window.ApexCharts) {
+    var chart = new ApexCharts(document.querySelector('#grafico-estoque'), {
+      chart: { type: 'donut', height: 250, fontFamily: 'inherit', toolbar: {show: false} },
+      series: [{{ produtos|length - repor|length }}, {{ repor|length }}],
+      labels: ['Em dia', 'Precisa repor'], colors: ['#25805c', '#eabf3f'],
+      legend: {position: 'bottom'}, dataLabels: {enabled: false},
+      stroke: {width: 4, colors: ['#ffffff']},
+      plotOptions: {pie: {donut: {size: '72%'}}}
+    });
+    chart.render().then(function () { document.getElementById('grafico-fallback').hidden = true; });
+  }
+</script>
+{% endif %}
+{% endblock %}

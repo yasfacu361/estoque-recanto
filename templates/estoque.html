@@ -1,16 +1,23 @@
 {% extends "base.html" %}
 {% block conteudo %}
-<h2>Estoque</h2>
-<a class="botao" href="{{ url_for('movimentar') }}">Registrar movimentação</a>
-<a class="botao secundario" href="{{ url_for('novo_produto') }}">Novo produto</a>
-<table>
-  <tr><th>Produto</th><th>Saldo</th><th>Situação</th></tr>
+<div class="titulo-pagina"><div><span class="eyebrow">CONTROLE DE PRODUTOS</span><h2>Estoque</h2></div><a class="botao" href="{{ url_for('novo_produto') }}">+ Novo produto</a></div>
+<p class="ajuda">Pegou um item do armário? Toque em <strong>Retirada</strong> na linha dele. Chegou produto? Toque em <strong>Entrada</strong>.</p>
+<form method="get" class="busca cartao"><label for="busca">Buscar produto</label><div class="busca-campos"><input id="busca" name="busca" value="{{ busca }}" placeholder="Ex.: sabonete"><select name="filtro" aria-label="Filtrar produtos"><option value="todos">Todos os produtos</option><option value="repor" {{ 'selected' if filtro == 'repor' }}>Precisam repor</option></select><button class="botao">Buscar</button><a class="botao secundario" href="{{ url_for('estoque') }}">Limpar</a></div></form>
+<ul class="lista">
   {% for p in produtos %}
-  <tr>
-    <td>{{ p.nome }}</td>
-    <td>{{ p.saldo }}</td>
-    <td>{% if p.repor %}<span class="repor">⚠ Repor</span>{% else %}OK{% endif %}</td>
-  </tr>
+  <li class="{{ 'precisa' if p.repor }} {{ 'alterado' if p.id == alterado }}">
+    <div class="linha">
+      <span><span class="nome">{{ p.nome }}</span><br><span class="saldo">Saldo {{ p.saldo }} · mínimo {{ p.estoque_minimo }}</span></span>
+      {% if p.repor %}<span class="repor">⚠ Repor</span>{% else %}<span class="situacao-ok">✓ OK</span>{% endif %}
+    </div>
+    <div class="botoes-linha">
+      <a class="botao" href="{{ url_for('movimentar', produto_id=p.id, tipo='retirada') }}" aria-label="Retirada de {{ p.nome }}">− Retirada</a>
+      <a class="botao secundario" href="{{ url_for('movimentar', produto_id=p.id, tipo='entrada') }}" aria-label="Entrada de {{ p.nome }}">+ Entrada</a>
+    </div>
+  </li>
+  {% else %}
+  <li>Nenhum produto encontrado. Ajuste a busca ou cadastre um produto.</li>
   {% endfor %}
-</table>
+</ul>
+
 {% endblock %}
