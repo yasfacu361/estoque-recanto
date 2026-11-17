@@ -2,22 +2,28 @@
 
 App Flask simples: produtos de higiene, entradas, retiradas e aviso Repor.
 Regra principal: saldo = entradas - retiradas. Repor quando saldo <= minimo.
-Os dados ficam no MySQL (tabelas produto e movimentacao).
+Modo temporario de validacao: dados ficticios em memoria, sem conexao ao MySQL.
 """
-import os
+from datetime import datetime
 
-import pymysql
 from flask import Flask, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
-app.secret_key = os.environ["ESTOQUE_SECRET"]
+app.secret_key = "chave-local-de-validacao"
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
-# Login unico da equipe. A senha fica so em hash (variavel de ambiente).
-USUARIO = os.environ.get("ESTOQUE_USUARIO", "equipe")
-SENHA_HASH = os.environ["ESTOQUE_SENHA_HASH"]
+# Credenciais fixas apenas para validacao local.
+USUARIO = "equipe"
+SENHA = "123456"
 
+# Dados ficticios: alteracoes sao perdidas ao reiniciar.
+produtos_mock = [
+    {"id": 1, "nome": "Sabonete", "estoque_minimo": 10, "saldo": 8},
+    {"id": 2, "nome": "Fralda geriatrica", "estoque_minimo": 20, "saldo": 35},
+    {"id": 3, "nome": "Creme dental", "estoque_minimo": 5, "saldo": 12},
+]
+
+movimentacoes_mock = []
 
 # ---------- Regras (sem banco, faceis de testar) ----------
 def calcular_saldo(entradas, retiradas):
@@ -28,71 +34,30 @@ def precisa_repor(saldo, minimo):
     return saldo <= minimo
 
 
-# ---------- Acesso ao MySQL ----------
-def conectar():
-    return pymysql.connect(
-        host=os.environ.get("DB_HOST", "localhost"),
-        port=int(os.environ.get("DB_PORT", 3306)),
-        user=os.environ.get("DB_USER", "root"),
-        password=os.environ.get("DB_PASSWORD", ""),
-        database=os.environ.get("DB_NAME", "estoque_recanto"),
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-
-
-SQL_PRODUTOS = """
-    SELECT p.id, p.nome, p.estoque_minimo,
-           COALESCE(SUM(CASE WHEN m.tipo = 'entrada' THEN m.quantidade END), 0) AS entradas,
-           COALESCE(SUM(CASE WHEN m.tipo = 'retirada' THEN m.quantidade END), 0) AS retiradas
-    FROM produto p LEFT JOIN movimentacao m ON m.produto_id = p.id
-"""
-
-
-def _montar(linha):
-    saldo = calcular_saldo(int(linha["entradas"]), int(linha["retiradas"]))
-    return {"id": linha["id"], "nome": linha["nome"], "estoque_minimo": linha["estoque_minimo"],
-            "saldo": saldo, "repor": precisa_repor(saldo, linha["estoque_minimo"])}
-
-
+# ---------- Dados simulados em memoria ----------
 def listar_produtos():
-    with conectar() as con, con.cursor() as cur:
-        cur.execute(SQL_PRODUTOS + " GROUP BY p.id ORDER BY p.nome")
-        produtos = [_montar(linha) for linha in cur.fetchall()]
-    # Itens que precisam repor aparecem primeiro.
-    return sorted(produtos, key=lambda p: not p["repor"])
+    produtos = [{**p, "repor": precisa_repor(p["saldo"], p["estoque_minimo"])}
+                for p in produtos_mock]
+    return sorted(produtos, key=lambda p: (not p["repor"], p["nome"].casefold()))
 
 
 def buscar_produto(produto_id):
-    with conectar() as con, con.cursor() as cur:
-        cur.execute(SQL_PRODUTOS + " WHERE p.id = %s GROUP BY p.id", (produto_id,))
-        linha = cur.fetchone()
-        return _montar(linha) if linha else None
+    return next((p for p in listar_produtos() if p["id"] == produto_id), None)
 
 
 def inserir_produto(nome, minimo):
-    with conectar() as con, con.cursor() as cur:
-        try:
-            cur.execute("INSERT INTO produto (nome, estoque_minimo) VALUES (%s, %s)", (nome, minimo))
-        except pymysql.err.IntegrityError:
-            raise ValueError("duplicado")
-        con.commit()
+    if any(p["nome"].casefold() == nome.casefold() for p in produtos_mock):
+        raise ValueError("duplicado")
+    proximo_id = max((p["id"] for p in produtos_mock), default=0) + 1
+    produtos_mock.append({"id": proximo_id, "nome": nome, "estoque_minimo": minimo, "saldo": 0})
 
 
 def inserir_movimentacao(produto_id, tipo, quantidade):
-    """Grava a movimentacao. Na retirada, trava o produto e confere o saldo
-    na mesma transacao, para o saldo nunca ficar negativo."""
-    with conectar() as con, con.cursor() as cur:
-        cur.execute("SELECT id FROM produto WHERE id = %s FOR UPDATE", (produto_id,))
-        if tipo == "retirada":
-            cur.execute(SQL_PRODUTOS + " WHERE p.id = %s GROUP BY p.id", (produto_id,))
-            saldo = _montar(cur.fetchone())["saldo"]
-            if quantidade > saldo:
-                con.rollback()
-                raise ValueError(saldo)
-        cur.execute("INSERT INTO movimentacao (produto_id, tipo, quantidade) VALUES (%s, %s, %s)",
-                    (produto_id, tipo, quantidade))
-        con.commit()
-
+    produto = next(p for p in produtos_mock if p["id"] == produto_id)
+    if tipo == "retirada" and quantidade > produto["saldo"]:
+        raise ValueError(produto["saldo"])
+    produto["saldo"] += quantidade if tipo == "entrada" else -quantidade
+    movimentacoes_mock.insert(0, {"produto": produto["nome"], "tipo": tipo, "quantidade": quantidade, "data": datetime.now().strftime("%d/%m/%Y %H:%M")})
 
 # ---------- Telas ----------
 @app.before_request
@@ -105,9 +70,9 @@ def exigir_login():
 def login():
     erro = None
     if request.method == "POST":
-        if request.form.get("usuario") == USUARIO and check_password_hash(SENHA_HASH, request.form.get("senha", "")):
+        if request.form.get("usuario") == USUARIO and request.form.get("senha", "") == SENHA:
             session["logado"] = True
-            return redirect(url_for("estoque"))
+            return redirect(url_for("inicio"))
         erro = "Usuario ou senha incorretos."
     return render_template("login.html", erro=erro)
 
@@ -119,9 +84,21 @@ def sair():
 
 
 @app.route("/")
+def inicio():
+    produtos = listar_produtos()
+    repor = [p for p in produtos if p["repor"]]
+    return render_template("dashboard.html", produtos=produtos, repor=repor,
+                           movimentacoes=movimentacoes_mock[:5])
+
+
+@app.route("/estoque")
 def estoque():
     alterado = request.args.get("alterado", "")
-    return render_template("estoque.html", produtos=listar_produtos(),
+    busca = request.args.get("busca", "").strip()
+    filtro = request.args.get("filtro", "todos")
+    produtos = [p for p in listar_produtos() if busca.casefold() in p["nome"].casefold()
+                and (filtro != "repor" or p["repor"])]
+    return render_template("estoque.html", produtos=produtos, busca=busca, filtro=filtro,
                            alterado=int(alterado) if alterado.isdigit() else None)
 
 

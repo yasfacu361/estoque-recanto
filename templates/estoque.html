@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block conteudo %}
-<h2>Estoque</h2>
+<div class="titulo-pagina"><div><span class="eyebrow">CONTROLE DE PRODUTOS</span><h2>Estoque</h2></div><a class="botao" href="{{ url_for('novo_produto') }}">+ Novo produto</a></div>
 <p class="ajuda">Pegou um item do armário? Toque em <strong>Retirada</strong> na linha dele. Chegou produto? Toque em <strong>Entrada</strong>.</p>
+<form method="get" class="busca cartao"><label for="busca">Buscar produto</label><div class="busca-campos"><input id="busca" name="busca" value="{{ busca }}" placeholder="Ex.: sabonete"><select name="filtro" aria-label="Filtrar produtos"><option value="todos">Todos os produtos</option><option value="repor" {{ 'selected' if filtro == 'repor' }}>Precisam repor</option></select><button class="botao">Buscar</button><a class="botao secundario" href="{{ url_for('estoque') }}">Limpar</a></div></form>
 <ul class="lista">
   {% for p in produtos %}
   <li class="{{ 'precisa' if p.repor }} {{ 'alterado' if p.id == alterado }}">
@@ -15,8 +16,8 @@
     </div>
   </li>
   {% else %}
-  <li>Nenhum produto cadastrado ainda. Comece em “Novo produto”.</li>
+  <li>Nenhum produto encontrado. Ajuste a busca ou cadastre um produto.</li>
   {% endfor %}
 </ul>
-<div class="acoes"><a class="botao secundario" href="{{ url_for('novo_produto') }}">+ Novo produto</a></div>
+
 {% endblock %}

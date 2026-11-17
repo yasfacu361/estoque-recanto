@@ -1,4 +1,4 @@
-"""Testes de integracao: rotas do Flask gravando e lendo no MySQL."""
+"""Testes das rotas Flask com dados simulados em memoria."""
 import app as estoque
 
 
@@ -23,7 +23,7 @@ def test_cadastra_produto_e_mostra_repor(cliente):
     cliente.post("/produto/novo", data={"nome": "Sabonete", "estoque_minimo": "10"})
     p = produto("Sabonete")
     assert p["saldo"] == 0 and p["repor"] is True
-    assert "⚠ Repor" in cliente.get("/").get_data(as_text=True)
+    assert "⚠ Repor" in cliente.get("/estoque").get_data(as_text=True)
 
 
 def test_nao_aceita_produto_repetido(cliente):
@@ -95,4 +95,17 @@ def test_botao_da_linha_ja_escolhe_o_produto(cliente):
 def test_linha_alterada_fica_destacada(cliente):
     cliente.post("/produto/novo", data={"nome": "Sabonete", "estoque_minimo": "10"})
     pid = produto("Sabonete")["id"]
-    assert "alterado" in cliente.get(f"/?alterado={pid}").get_data(as_text=True)
+    assert "alterado" in cliente.get(f"/estoque?alterado={pid}").get_data(as_text=True)
+
+
+def test_dashboard_e_busca_refletem_movimentacoes(cliente):
+    cliente.post("/produto/novo", data={"nome": "Sabonete", "estoque_minimo": "5"})
+    cliente.post("/produto/novo", data={"nome": "Fralda", "estoque_minimo": "2"})
+    pid = produto("Sabonete")["id"]
+    cliente.post("/movimentar", data={"produto_id": pid, "tipo": "entrada", "quantidade": "9"})
+    pagina = cliente.get("/").get_data(as_text=True)
+    assert "Últimas movimentações" in pagina and "Sabonete" in pagina and "+ 9" in pagina
+    pagina = cliente.get("/estoque?busca=sabo").get_data(as_text=True)
+    assert "Sabonete" in pagina and "Fralda" not in pagina
+    pagina = cliente.get("/estoque?filtro=repor").get_data(as_text=True)
+    assert "Fralda" in pagina and "Sabonete" not in pagina
