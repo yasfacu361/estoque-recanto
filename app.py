@@ -5,11 +5,12 @@ Regra principal: saldo = entradas - retiradas. Repor quando saldo <= minimo.
 Modo temporario de validacao: dados ficticios em memoria, sem conexao ao MySQL.
 """
 from datetime import datetime
+import os
 
 from flask import Flask, redirect, render_template, request, session, url_for
 
 app = Flask(__name__)
-app.secret_key = "chave-local-de-validacao"
+app.secret_key = os.environ.get("SECRET_KEY", "chave-local-de-validacao")
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
 # Credenciais fixas apenas para validacao local.

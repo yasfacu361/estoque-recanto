@@ -17,3 +17,13 @@ O código anterior conectado ao MySQL está preservado em `app_mysql.py`, junto 
 Instale as dependências com `pip install -r requirements-dev.txt` e execute `pytest -v --cov=app`. Os testes atuais usam dados em memória, sem conectar ao MySQL.
 
 A tela inicial apresenta um dashboard com o resumo de reposição, gráfico ApexCharts e as últimas cinco movimentações feitas desde que o aplicativo foi iniciado. Na tela de estoque há busca por nome e filtro para produtos que precisam ser repostos. O gráfico usa CDN e precisa de internet; os números e listas continuam disponíveis se ele não carregar. Dados e histórico são simulados e se apagam ao reiniciar.
+
+## Publicação no Render
+
+A versão de demonstração usa a branch `Fase-04`, Python e Gunicorn, com dados em memória.
+
+- Build Command — `pip install -r requirements.txt`
+- Start Command — `gunicorn --workers 1 --threads 1 --bind 0.0.0.0:$PORT app:app`
+- Variável de ambiente — `SECRET_KEY`, gerada no painel do Render.
+
+O único processo mantém as movimentações da demonstração no mesmo espaço de memória. Os dados voltam ao estado inicial quando o serviço reinicia.
